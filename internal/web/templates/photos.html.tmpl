@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Food: {{ .Title }}</title>
+</head>
+<body>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Photo</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ range .Rows }}
+            <tr>
+                <td>{{ .Timestamp }}</td>
+                <td><img src="{{ .URL }}" style="max-width: 200px; max-height: 200px;" /></td>
+            </tr>
+            {{ end }}
+        </tbody>
+    </table>
+</body>
+</html>

@@ -11,6 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
+const PrefixPhotos = "photos/"
+
 type Photos struct {
 	s3Client *s3.Client
 	bucket   string
@@ -20,17 +22,19 @@ func NewPhotos(s3Client *s3.Client, bucket string) *Photos {
 	return &Photos{s3Client: s3Client, bucket: bucket}
 }
 
-func (p *Photos) UploadFile(ctx context.Context, file string) (string, error) {
-	slog.Info("uploading file to photos bucket", "file", file)
+// UploadFile uploads a file to the photos bucket.
+func (p *Photos) UploadFile(ctx context.Context, filePath string) (string, error) {
+	slog.Info("uploading file to photos bucket", "file", filePath)
 
-	data, err := os.ReadFile(file)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return "", err
 	}
 
 	contentType := http.DetectContentType(data)
 
-	key := "photos/" + filepath.Base(file)
+	filebase := filepath.Base(filePath)
+	key := PrefixPhotos + filebase
 	_, err = p.s3Client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:      &p.bucket,
 		Key:         &key,
@@ -41,23 +45,14 @@ func (p *Photos) UploadFile(ctx context.Context, file string) (string, error) {
 		return "", err
 	}
 
-	return key, nil
+	return filebase, nil
 }
 
-func (p *Photos) GetObject(ctx context.Context, file string) ([]byte, error) {
-	resp, err := p.s3Client.GetObject(ctx, &s3.GetObjectInput{
+// GetPhoto returns an object from the photos bucket.
+func (p *Photos) GetPhoto(ctx context.Context, name string) (*s3.GetObjectOutput, error) {
+	key := PrefixPhotos + name
+	return p.s3Client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: &p.bucket,
-		Key:    &file,
+		Key:    &key,
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
 }

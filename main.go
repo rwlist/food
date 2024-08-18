@@ -17,10 +17,13 @@ import (
 	"github.com/rwlist/food/internal/conf"
 	"github.com/rwlist/food/internal/db"
 	"github.com/rwlist/food/internal/seed"
+	"github.com/rwlist/food/internal/web"
 )
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}))
 	slog.SetDefault(logger)
 
 	cfg, err := conf.ParseEnv()
@@ -69,7 +72,16 @@ func main() {
 		cmd = os.Args[1]
 	}
 
+	photos := blobs.NewPhotos(s3Client, cfg.R2BucketName)
+
 	switch cmd {
+	case "server":
+		// start http server
+		server := web.NewServer(cfg, queries, photos)
+		err := server.Start(ctx)
+		if err != nil {
+			slog.Error("server error", "err", err.Error())
+		}
 	case "bot":
 		chbot.StartBot(ctx, cfg)
 	case "import":
@@ -78,7 +90,7 @@ func main() {
 		archiver := seed.ArchiveUploader{
 			Dir:     dir,
 			Queries: queries,
-			Photos:  blobs.NewPhotos(s3Client, cfg.R2BucketName),
+			Photos:  photos,
 		}
 		err := archiver.LoadFromArchive(ctx)
 		if err != nil {

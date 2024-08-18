@@ -11,6 +11,7 @@ type App struct {
 	R2KeyID          string `env:"R2_KEY_ID"`
 	R2KeySecret      string `env:"R2_KEY_SECRET"`
 	R2BucketName     string `env:"R2_BUCKET_NAME"`
+	HttpBind         string `env:"HTTP_BIND" envDefault:":9090"`
 }
 
 func ParseEnv() (*App, error) {
